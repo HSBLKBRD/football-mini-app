@@ -19,7 +19,7 @@ function AppContent() {
 
   const SUPABASE_URL = 'https://kfgmorqatvpnecjbixak.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_6suJaEKh-tUo5UTmL7qFVw_wgdFAOh7';
-  const USERS_TABLE = 'predictions';
+  const USERS_TABLE = 'users';
 
   const handleManualSave = async () => {
     if (!manualAddress.trim()) {
@@ -50,11 +50,17 @@ function AppContent() {
     }
   };
 
-  const handleConnect = () => {
-    if (tonConnectUI) {
-      tonConnectUI.connectWallet();
-    } else {
-      console.warn('TonConnect UI not initialized');
+  const handleConnect = async () => {
+    if (!tonConnectUI) {
+      // SDK not available, show manual input
+      setShowManual(true);
+      return;
+    }
+    try {
+      await tonConnectUI.connectWallet();
+    } catch (e) {
+      console.warn('TonConnect connection failed, falling back to manual', e);
+      setShowManual(true);
     }
   };
 
