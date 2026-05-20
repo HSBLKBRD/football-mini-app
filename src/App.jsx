@@ -19,9 +19,13 @@ function AppContent() {
 
   const SUPABASE_URL = 'https://kfgmorqatvpnecjbixak.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_6suJaEKh-tUo5UTmL7qFVw_wgdFAOh7';
-  const USERS_TABLE = 'users';
+  const USERS_TABLE = 'predictions';
 
-  const saveAddress = async (address) => {
+  const handleManualSave = async () => {
+    if (!manualAddress.trim()) {
+      console.warn('No address to save');
+      return;
+    }
     try {
       const resp = await fetch(`${SUPABASE_URL}/rest/v1/${USERS_TABLE}`, {
         method: 'POST',
@@ -31,13 +35,15 @@ function AppContent() {
           'Content-Type': 'application/json',
           Prefer: 'return=representation',
         },
-        body: JSON.stringify({ address, created_at: new Date().toISOString() }),
+        body: JSON.stringify({ wallet_address: manualAddress.trim(), created_at: new Date().toISOString() }),
       });
       if (!resp.ok) {
         const err = await resp.text();
         console.error('❌ Failed to save address', err);
       } else {
         console.log('✅ Address saved');
+        setManualAddress('');
+        setShowManual(false);
       }
     } catch (e) {
       console.error('❌ Unexpected error while saving address', e);
@@ -88,13 +94,7 @@ function AppContent() {
             style={{ padding: '0.5rem', width: '60%' }}
           />
           <button
-            onClick={async () => {
-              if (manualAddress.trim()) {
-                await saveAddress(manualAddress.trim());
-                setManualAddress('');
-                setShowManual(false);
-              }
-            }}
+            onClick={handleManualSave}
             className="save-btn"
             style={{ marginLeft: '0.5rem', padding: '0.5rem' }}
           >
