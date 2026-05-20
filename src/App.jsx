@@ -16,6 +16,7 @@ function AppContent() {
 
   const [showManual, setShowManual] = useState(false);
   const [manualAddress, setManualAddress] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
 
   const SUPABASE_URL = 'https://kfgmorqatvpnecjbixak.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_6suJaEKh-tUo5UTmL7qFVw_wgdFAOh7';
@@ -44,6 +45,7 @@ function AppContent() {
         console.log('✅ Address saved');
         setManualAddress('');
         setShowManual(false);
+        setIsConnected(true);
       }
     } catch (e) {
       console.error('❌ Unexpected error while saving address', e);
@@ -51,13 +53,18 @@ function AppContent() {
   };
 
   const handleConnect = async () => {
+    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+    if (isMobile) {
+      setShowManual(true);
+      return;
+    }
     if (!tonConnectUI) {
-      // SDK not available, show manual input
       setShowManual(true);
       return;
     }
     try {
       await tonConnectUI.connectWallet();
+      setIsConnected(true);
     } catch (e) {
       console.warn('TonConnect connection failed, falling back to manual', e);
       setShowManual(true);
@@ -82,9 +89,7 @@ function AppContent() {
       </nav>
 
       {/* Connect options */}
-      <button onClick={handleConnect} className="connect-btn">
-        Connect Wallet via Telegram
-      </button>
+      <button onClick={handleConnect} className="connect-btn">{isConnected ? 'Wallet Connected' : 'Connect Wallet'}</button>
       <button onClick={() => setShowManual(true)} className="manual-btn" style={{ marginLeft: '0.5rem' }}>
         Manual Connect
       </button>
