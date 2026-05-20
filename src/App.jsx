@@ -34,8 +34,12 @@ function AppContent() {
 
 // Direct hard redirect to Telegram Wallet (bypassing TonConnect SDK modal)
 const handleConnectWallet = () => {
-  console.log('Attempting to open Wallet deep-link...');
-  window.location.href = 'https://t.me/wallet?attach=wallet';
+  // Use TonConnect UI to open the wallet connection modal
+  if (window.tonConnectUI) {
+    window.tonConnectUI.connectWallet();
+  } else {
+    console.warn('TonConnect UI not initialized');
+  }
 };
 
    // Telegram WebApp integration – only react after the Mini App is ready
@@ -108,13 +112,13 @@ const handleConnectWallet = () => {
         )}
       </nav>
 
-       {/* Connect options */}
-       <button onClick={handleConnectWallet} className="connect-btn">
-         Connect Wallet via Telegram
-       </button>
-       <button onClick={() => setShowManual(true)} className="manual-btn" style={{ marginLeft: '0.5rem' }}>
-         Connect Manually
-       </button>
+        {/* Connect options */}
+        <button onClick={handleConnectWallet} className="connect-btn" style={{display:'none'}}>
+          Connect Wallet via Telegram
+        </button>
+        <button onClick={() => setShowManual(true)} className="manual-btn" style={{ marginLeft: '0.5rem' }}>
+          Manual Connect
+        </button>
        {showManual && (
          <div className="manual-connect" style={{ marginTop: '1rem' }}>
            <input
@@ -153,7 +157,7 @@ const handleConnectWallet = () => {
 }
 
 // Enable or disable TonConnect provider. Set to false to completely bypass the SDK.
-const ENABLE_TON_CONNECT = false;
+const ENABLE_TON_CONNECT = true;
 
 export default function App() {
   const manifestUrl = 'https://football-mini-app.vercel.app/tonconnect-manifest.json';
