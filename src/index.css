@@ -510,9 +510,19 @@ body {
 }
 
 /* Allow clicks on the actual TonConnect modal */
+/* Allow interaction with the actual modal when it appears */
 #tc-widget-root .tc-modal,
-.ton-connect-ui-container .tc-modal,
-.tc-root .tc-modal {
+.tc-root .tc-modal,
+.ton-connect-ui-container .tc-modal {
+  pointer-events: auto !important;
+}
+
+/* Ensure modal children can receive events */
+#tc-widget-root .tc-modal *,
+.tc-root .tc-modal *,
+.ton-connect-ui-container .tc-modal * {
+  pointer-events: auto !important;
+}
   pointer-events: auto !important;
 }
 
@@ -522,15 +532,23 @@ body {
 .disconnect-btn {
   cursor: pointer;
   pointer-events: auto;
+  z-index: 99999;
+}
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 /* ==========================================================================
    TON Connect UI Mobile Viewport & Z-Index Fixes
    ========================================================================== */
+/* Prevent TON Connect containers from blocking UI when not active */
 #tc-widget-root,
 .tc-root,
 .tc-modal,
 .ton-connect-ui-container {
+  pointer-events: none !important;
+  z-index: 2147483647 !important;
+}
   z-index: 2147483647 !important;
   position: fixed !important;
   top: 0 !important;
