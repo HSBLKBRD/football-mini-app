@@ -501,18 +501,27 @@ body {
   pointer-events: auto !important;
 }
 
-/* Ensure parent overlay containers are clickable and on top */
+/* Prevent overlay containers from intercepting clicks */
 #tc-widget-root,
 .ton-connect-ui-container,
 .tc-root {
-  pointer-events: auto !important;
+  pointer-events: none !important;
   z-index: 2147483647 !important;
 }
 
+/* Allow clicks on the actual TonConnect modal */
 #tc-widget-root .tc-modal,
 .ton-connect-ui-container .tc-modal,
 .tc-root .tc-modal {
   pointer-events: auto !important;
+}
+
+/* Ensure app buttons have pointer cursor */
+.connect-btn,
+.manual-btn,
+.disconnect-btn {
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 /* ==========================================================================
