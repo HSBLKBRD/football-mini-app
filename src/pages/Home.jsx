@@ -92,7 +92,7 @@ function MatchCard({ match, user, tonConnectUI }) {
 
   // Polling blockchain for transaction validation
   const verifyTransactionOnChain = async (userRawAddress, expectedAmount, targetWallet) => {
-    const targetNetwork = String(import.meta.env.VITE_TON_NETWORK || '0');
+    const targetNetwork = String(import.meta.env.VITE_TON_NETWORK || '-239');
     const network = tonConnectUI.account?.network;
     const isTestnet = 
       targetNetwork === '0' || 
@@ -199,7 +199,7 @@ function MatchCard({ match, user, tonConnectUI }) {
 
       const transaction = {
         validUntil: Math.floor(Date.now() / 1000) + 120, // Valid for 2 mins
-        network: String(import.meta.env.VITE_TON_NETWORK || '0'), // "0" for Testnet, "-239" for Mainnet
+        network: String(import.meta.env.VITE_TON_NETWORK || '-239'), // Always Mainnet (-239) by default
         messages: [
           {
             address: walletAddress,
@@ -373,10 +373,15 @@ function MatchCard({ match, user, tonConnectUI }) {
             {!tonConnectUI.connected ? (
               <>
                 <p className="wallet-note">
-                  Please connect your wallet at the top of the screen to submit your prediction.
+                  Please connect your Telegram Wallet to submit your prediction.
                 </p>
-                <button type="button" className="btn-primary" onClick={() => tonConnectUI.openModal()} disabled={submitting || countdown.isExpired}>
-                  Connect TON Wallet
+                <button 
+                  type="button" 
+                  className="btn-primary" 
+                  onClick={() => tonConnectUI.openSingleWalletModal('telegram-wallet')} 
+                  disabled={submitting || countdown.isExpired}
+                >
+                  Connect Telegram Wallet
                 </button>
               </>
             ) : (
