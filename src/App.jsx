@@ -57,7 +57,23 @@ export default function App() {
   const walletsSource = `${window.location.origin}/wallets.json`;
 
   return (
-    <TonConnectUIProvider manifestUrl={manifestUrl} walletsListSource={walletsSource}>
+    <TonConnectUIProvider 
+      manifestUrl={manifestUrl} 
+      walletsListSource={walletsSource}
+      walletsListConfiguration={{
+        includeWallets: [
+          {
+            appName: "telegram-wallet",
+            name: "Wallet",
+            imageUrl: "https://wallet.tg/images/logo-288.png",
+            aboutUrl: "https://wallet.tg/",
+            universalLink: "https://t.me/wallet?attach=wallet",
+            bridgeUrl: "https://walletbot.me/tonconnect-bridge/bridge",
+            platforms: ["ios", "android", "macos", "windows", "linux"]
+          }
+        ]
+      }}
+    >
       <Router>
         <AppContent />
       </Router>
