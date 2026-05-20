@@ -1,6 +1,6 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { TonConnectUIProvider } from '@tonconnect/ui-react';
+import { TonConnectUIProvider, THEME } from '@tonconnect/ui-react';
 import Header from './components/Header';
 import Home from './pages/Home';
 import LeaderboardPage from './pages/LeaderboardPage';
@@ -60,6 +60,11 @@ export default function App() {
     <TonConnectUIProvider 
       manifestUrl={manifestUrl} 
       walletsListSource={walletsSource}
+      restoreConnection={true}
+      uiPreferences={{ theme: THEME.DARK }}
+      actionsConfiguration={{
+        returnStrategy: 'none'
+      }}
       walletsListConfiguration={{
         includeWallets: [
           {

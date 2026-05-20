@@ -375,9 +375,14 @@ function MatchCard({ match, user, tonConnectUI }) {
                 <p className="wallet-note">
                   Please connect your Telegram Wallet to submit your prediction.
                 </p>
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
-                  <TonConnectButton />
-                </div>
+                <button 
+                  type="button" 
+                  className="btn-primary" 
+                  onClick={() => tonConnectUI.connectWallet()}
+                  disabled={submitting || countdown.isExpired}
+                >
+                  Connect Wallet
+                </button>
               </>
             ) : (
               <>
