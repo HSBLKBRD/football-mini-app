@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import { TonConnectUIProvider, THEME, useTonConnectUI } from '@tonconnect/ui-react';
 import Header from './components/Header';
@@ -10,10 +10,9 @@ import { getTelegramUser } from './lib/telegramUtils';
 function AppContent() {
   const user = getTelegramUser();
   const adminId = import.meta.env.VITE_ADMIN_ID || import.meta.env.REACT_APP_ADMIN_ID || '';
-  const showAdminTab = user && adminId && user.id.toString() === adminId.toString();
+  const showAdminTab = user && adminId && user.id?.toString() === adminId.toString();
 
   const [tonConnectUI] = useTonConnectUI();
-
   const [showManual, setShowManual] = useState(false);
   const [manualAddress, setManualAddress] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -23,11 +22,34 @@ function AppContent() {
   const SUPABASE_ANON_KEY = 'sb_publishable_6suJaEKh-tUo5UTmL7qFVw_wgdFAOh7';
   const USERS_TABLE = 'users';
 
-  const handleManualSave = async () => {
-    if (!manualAddress.trim()) {
-      console.warn('No address to save');
-      return;
+  // Cleanup on mount / unmount
+  useEffect(() => {
+    // Ensure any lingering listeners are removed
+    if (tonConnectUI && typeof tonConnectUI.off === 'function') {
+      tonConnectUI.off();
     }
+    // Observe TonConnect modal to hide any stray vConsole (defensive)
+    const observer = new MutationObserver(() => {
+      const modal = document.querySelector('.tc-modal');
+      if (modal) {
+        const vc = document.querySelector('.vc-panel') || document.querySelector('.vconsole');
+        if (vc) vc.style.display = 'none';
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      if (tonConnectUI && typeof tonConnectUI.disconnect === 'function') {
+        tonConnectUI.disconnect();
+      }
+      if (tonConnectUI && typeof tonConnectUI.off === 'function') {
+        tonConnectUI.off();
+      }
+      observer.disconnect();
+    };
+  }, []);
+
+  const handleManualSave = async () => {
+    if (!manualAddress.trim()) return;
     try {
       const resp = await fetch(`${SUPABASE_URL}/rest/v1/${USERS_TABLE}`, {
         method: 'POST',
@@ -39,32 +61,35 @@ function AppContent() {
         },
         body: JSON.stringify({ address: manualAddress.trim(), created_at: new Date().toISOString() }),
       });
-      if (!resp.ok) {
-        const err = await resp.text();
-        console.error('❌ Failed to save address', err);
-      } else {
-        console.log('✅ Address saved');
+      if (resp.ok) {
+        setWalletAddress(manualAddress.trim());
+        setIsConnected(true);
         setManualAddress('');
         setShowManual(false);
-        // Mark connection as established after manual save
-        setIsConnected(true);
-        // Manual flow does not provide a wallet address; keep it empty or set to entered address
-        setWalletAddress(manualAddress.trim());      }
+      } else {
+        console.error('Failed to save address', await resp.text());
+      }
     } catch (e) {
-      console.error('❌ Unexpected error while saving address', e);
+      console.error('Unexpected error while saving address', e);
     }
   };
 
   const handleConnect = async () => {
-    // Desktop SDK flow
+    const isMobileEnv = typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.platform && /android|ios|mobile|iphone|ipad/i.test(window.Telegram.WebApp.platform);
+    if (isMobileEnv) {
+      setShowManual(true);
+      return;
+    }
     if (!tonConnectUI) {
-      // SDK unavailable – fallback to manual UI
       setShowManual(true);
       return;
     }
     try {
+      // Ensure previous listeners are cleared
+      if (tonConnectUI && typeof tonConnectUI.off === 'function') {
+        tonConnectUI.off();
+      }
       await tonConnectUI.connectWallet();
-      // After successful connection, retrieve the wallet address
       const address = tonConnectUI?.wallet?.account?.address || '';
       setWalletAddress(address);
       setIsConnected(true);
@@ -74,7 +99,6 @@ function AppContent() {
     }
   };
 
-  // Disconnect handler for desktop
   const handleDisconnect = () => {
     if (tonConnectUI?.disconnect) {
       tonConnectUI.disconnect();
@@ -87,20 +111,14 @@ function AppContent() {
     <>
       <Header />
       <nav className="nav-tabs">
-        <NavLink to="/" className={({ isActive }) => `nav-tab ${isActive ? 'active' : ''}`}>
-          🏆 Match Prediction
-        </NavLink>
-        <NavLink to="/leaderboard" className={({ isActive }) => `nav-tab ${isActive ? 'active' : ''}`}>
-          📊 Leaderboard
-        </NavLink>
+        <NavLink to="/" className={({ isActive }) => `nav-tab ${isActive ? 'active' : ''}`}>🏆 Match Prediction</NavLink>
+        <NavLink to="/leaderboard" className={({ isActive }) => `nav-tab ${isActive ? 'active' : ''}`}>📊 Leaderboard</NavLink>
         {showAdminTab && (
-          <NavLink to="/admin" className={({ isActive }) => `nav-tab ${isActive ? 'active' : ''}`}>
-            ⚙️ Admin
-          </NavLink>
+          <NavLink to="/admin" className={({ isActive }) => `nav-tab ${isActive ? 'active' : ''}`}>⚙️ Admin</NavLink>
         )}
       </nav>
 
-      {/* Connect options */}
+      {/* Connection UI */}
       {isConnected ? (
         <>
           <span className="wallet-info">Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
@@ -109,9 +127,7 @@ function AppContent() {
       ) : (
         <button onClick={handleConnect} className="connect-btn">Connect Wallet</button>
       )}
-      <button onClick={() => setShowManual(true)} className="manual-btn" style={{ marginLeft: '0.5rem' }}>
-        Manual Connect
-      </button>
+      <button onClick={() => setShowManual(true)} className="manual-btn" style={{ marginLeft: '0.5rem' }}>Manual Connect</button>
 
       {showManual && (
         <div className="manual-connect" style={{ marginTop: '1rem' }}>
@@ -119,17 +135,11 @@ function AppContent() {
             type="text"
             placeholder="Enter your TON wallet address"
             value={manualAddress}
-            onChange={(e) => setManualAddress(e.target.value)}
+            onChange={e => setManualAddress(e.target.value)}
             className="address-input"
             style={{ padding: '0.5rem', width: '60%' }}
           />
-          <button
-            onClick={handleManualSave}
-            className="save-btn"
-            style={{ marginLeft: '0.5rem', padding: '0.5rem' }}
-          >
-            Save Address
-          </button>
+          <button onClick={handleManualSave} className="save-btn" style={{ marginLeft: '0.5rem', padding: '0.5rem' }}>Save Address</button>
         </div>
       )}
 
@@ -146,18 +156,21 @@ function AppContent() {
 export default function App() {
   const manifestUrl = `${window.location.origin}/tonconnect-manifest.json`;
   const walletsSource = `${window.location.origin}/wallets.json`;
+  const isMobile = typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.platform && /android|ios|mobile|iphone|ipad/i.test(window.Telegram.WebApp.platform);
 
   return (
-    <TonConnectUIProvider
-      manifestUrl={manifestUrl}
-      walletsListSource={walletsSource}
-      restoreConnection={true}
-      uiPreferences={{ theme: THEME.DARK }}
-      actionsConfiguration={{ returnStrategy: 'back' }}
-    >
-      <Router>
-        <AppContent />
-      </Router>
-    </TonConnectUIProvider>
+    <>
+      <TonConnectUIProvider
+        manifestUrl={manifestUrl}
+        walletsListSource={walletsSource}
+        restoreConnection={!isMobile}
+        uiPreferences={{ theme: THEME.DARK }}
+        actionsConfiguration={{ returnStrategy: 'back' }}
+      >
+        <Router>
+          <AppContent />
+        </Router>
+      </TonConnectUIProvider>
+    </>
   );
 }

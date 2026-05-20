@@ -42,6 +42,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  cursor: auto; /* Ensure default cursor */
 }
 
 body {
@@ -495,6 +496,25 @@ body {
   }
 }
 
+.tc-modal {
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure parent overlay containers are clickable and on top */
+#tc-widget-root,
+.ton-connect-ui-container,
+.tc-root {
+  pointer-events: auto !important;
+  z-index: 2147483647 !important;
+}
+
+#tc-widget-root .tc-modal,
+.ton-connect-ui-container .tc-modal,
+.tc-root .tc-modal {
+  pointer-events: auto !important;
+}
+
 /* ==========================================================================
    TON Connect UI Mobile Viewport & Z-Index Fixes
    ========================================================================== */
@@ -502,7 +522,7 @@ body {
 .tc-root,
 .tc-modal,
 .ton-connect-ui-container {
-  z-index: 9999 !important;
+  z-index: 2147483647 !important;
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
@@ -510,7 +530,7 @@ body {
   height: 100vh !important;
   height: -webkit-fill-available !important; /* Proper viewport height calculation for iOS Safari */
   overflow: hidden !important;
-  pointer-events: none !important; /* By default, let clicks pass through the overlay root */
+  pointer-events: auto !important;
 }
 
 /* Allow click events only on actual modal popup boxes / visible elements */
