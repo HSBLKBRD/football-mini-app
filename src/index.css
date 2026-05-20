@@ -494,3 +494,26 @@ body {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
   }
 }
+
+/* ==========================================================================
+   TON Connect UI Mobile Viewport & Z-Index Fixes
+   ========================================================================== */
+#tc-widget-root,
+.tc-root,
+.tc-modal,
+.ton-connect-ui-container {
+  z-index: 9999 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: -webkit-fill-available !important; /* Proper viewport height calculation for iOS Safari */
+  overflow: hidden !important;
+}
+
+/* Ensure inside components scale gracefully on small mobile screens */
+.tc-root * {
+  max-width: 100% !important;
+}
+
