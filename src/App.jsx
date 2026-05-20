@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { TonConnectUIProvider, THEME } from '@tonconnect/ui-react';
+import { TonConnectUIProvider, THEME, useTonConnectUI } from '@tonconnect/ui-react';
 import Header from './components/Header';
 import Home from './pages/Home';
 import LeaderboardPage from './pages/LeaderboardPage';
@@ -11,6 +11,24 @@ function AppContent() {
   const user = getTelegramUser();
   const adminId = import.meta.env.VITE_ADMIN_ID || import.meta.env.REACT_APP_ADMIN_ID || '';
   const showAdminTab = user && adminId && user.id.toString() === adminId.toString();
+
+  const [tonConnectUI] = useTonConnectUI();
+
+  useEffect(() => {
+    if (tonConnectUI) {
+      console.log('TON Connect UI Instance Initialized:', tonConnectUI);
+      const unsubscribeStatus = tonConnectUI.onStatusChange((wallet) => {
+        console.log('TON Connect Wallet Status Changed:', wallet);
+      });
+      const unsubscribeModal = tonConnectUI.onModalStateChange((state) => {
+        console.log('TON Connect Modal State Changed:', state);
+      });
+      return () => {
+        unsubscribeStatus();
+        unsubscribeModal();
+      };
+    }
+  }, [tonConnectUI]);
 
   return (
     <>

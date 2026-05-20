@@ -8,10 +8,16 @@ export default function Header() {
   const userAddress = useTonAddress();
 
   const handleWalletAction = async () => {
-    if (tonConnectUI.connected) {
-      await tonConnectUI.disconnect();
-    } else {
-      await tonConnectUI.connectWallet();
+    try {
+      if (tonConnectUI.connected) {
+        console.log('Header: Initiating manual disconnect');
+        await tonConnectUI.disconnect();
+      } else {
+        console.log('Header: Initiating manual openModal');
+        await tonConnectUI.openModal();
+      }
+    } catch (err) {
+      console.error('Header: Wallet action failed:', err);
     }
   };
 
@@ -21,7 +27,7 @@ export default function Header() {
   };
 
   return (
-    <header className="app-header">
+    <header className="app-header" style={{ position: 'relative', zIndex: 100 }}>
       <div className="brand">
         <h1 className="brand-title">فوتبالی ترین ها</h1>
         <span className="brand-subtitle">PREDICTION APP</span>
@@ -40,7 +46,10 @@ export default function Header() {
             border: tonConnectUI.connected ? '1px solid rgba(239, 68, 68, 0.3)' : 'none',
             color: tonConnectUI.connected ? '#ef4444' : 'var(--bg-main)',
             fontWeight: 'bold',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            position: 'relative',
+            zIndex: 10000,
+            pointerEvents: 'auto'
           }}
         >
           {tonConnectUI.connected ? `Disconnect (${formatAddress(userAddress)})` : 'Connect Wallet'}

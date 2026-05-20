@@ -369,7 +369,7 @@ function MatchCard({ match, user, tonConnectUI }) {
             </div>
           )}
 
-          <div className="ton-connect-section">
+          <div className="ton-connect-section" style={{ position: 'relative', zIndex: 100 }}>
             {!tonConnectUI.connected ? (
               <>
                 <p className="wallet-note">
@@ -378,8 +378,16 @@ function MatchCard({ match, user, tonConnectUI }) {
                 <button 
                   type="button" 
                   className="btn-primary" 
-                  onClick={() => tonConnectUI.connectWallet()}
+                  onClick={async () => {
+                    console.log('Home prediction card: Initiating openModal');
+                    try {
+                      await tonConnectUI.openModal();
+                    } catch (e) {
+                      console.error('Home prediction card: openModal failed:', e);
+                    }
+                  }}
                   disabled={submitting || countdown.isExpired}
+                  style={{ position: 'relative', zIndex: 10000, pointerEvents: 'auto' }}
                 >
                   Connect Wallet
                 </button>
