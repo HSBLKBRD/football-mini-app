@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useTonConnectUI } from '@tonconnect/ui-react';
+import { useTonConnectUI, TonConnectButton } from '@tonconnect/ui-react';
 import { supabase } from '../lib/supabaseClient';
 import { getTelegramUser } from '../lib/telegramUtils';
 
@@ -375,14 +375,9 @@ function MatchCard({ match, user, tonConnectUI }) {
                 <p className="wallet-note">
                   Please connect your Telegram Wallet to submit your prediction.
                 </p>
-                <button 
-                  type="button" 
-                  className="btn-primary" 
-                  onClick={() => tonConnectUI.openSingleWalletModal('telegram-wallet')} 
-                  disabled={submitting || countdown.isExpired}
-                >
-                  Connect Telegram Wallet
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+                  <TonConnectButton />
+                </div>
               </>
             ) : (
               <>

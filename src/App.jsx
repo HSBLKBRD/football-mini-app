@@ -54,9 +54,10 @@ function AppContent() {
 export default function App() {
   // Use relative path for manifest to automatically resolve in dev and prod
   const manifestUrl = `${window.location.origin}/tonconnect-manifest.json`;
+  const walletsSource = `${window.location.origin}/wallets.json`;
 
   return (
-    <TonConnectUIProvider manifestUrl={manifestUrl}>
+    <TonConnectUIProvider manifestUrl={manifestUrl} walletsListSource={walletsSource}>
       <Router>
         <AppContent />
       </Router>
