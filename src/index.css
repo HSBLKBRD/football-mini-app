@@ -510,6 +510,16 @@ body {
   height: 100vh !important;
   height: -webkit-fill-available !important; /* Proper viewport height calculation for iOS Safari */
   overflow: hidden !important;
+  pointer-events: none !important; /* By default, let clicks pass through the overlay root */
+}
+
+/* Allow click events only on actual modal popup boxes / visible elements */
+#tc-widget-root .tc-modal,
+#tc-widget-root [class*="modal"],
+#tc-widget-root [class*="popup"],
+.tc-modal,
+.tc-modal * {
+  pointer-events: auto !important;
 }
 
 /* Ensure inside components scale gracefully on small mobile screens */
