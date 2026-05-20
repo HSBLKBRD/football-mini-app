@@ -378,13 +378,16 @@ function MatchCard({ match, user, tonConnectUI }) {
                 <button 
                   type="button" 
                   className="btn-primary" 
-                  onClick={async () => {
-                    console.log('Home prediction card: Initiating openModal');
-                    try {
-                      await tonConnectUI.openModal();
-                    } catch (e) {
-                      console.error('Home prediction card: openModal failed:', e);
-                    }
+                  onClick={() => {
+                    console.log('Home prediction card: Initiating openModal with 150ms delay');
+                    setTimeout(async () => {
+                      try {
+                        await tonConnectUI.openModal();
+                        console.log('Home prediction card: openModal triggered successfully after delay');
+                      } catch (e) {
+                        console.error('Home prediction card: Delayed openModal failed:', e);
+                      }
+                    }, 150);
                   }}
                   disabled={submitting || countdown.isExpired}
                   style={{ position: 'relative', zIndex: 10000, pointerEvents: 'auto' }}

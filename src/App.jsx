@@ -81,7 +81,7 @@ export default function App() {
       restoreConnection={true}
       uiPreferences={{ theme: THEME.DARK }}
       actionsConfiguration={{
-        returnStrategy: 'none'
+        returnStrategy: 'back'
       }}
       walletsListConfiguration={{
         includeWallets: [
