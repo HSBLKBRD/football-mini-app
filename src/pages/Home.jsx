@@ -379,13 +379,13 @@ function MatchCard({ match, user, tonConnectUI }) {
                   type="button" 
                   className="btn-primary" 
                   onClick={() => {
-                    console.log('Home prediction card: Initiating openModal with 150ms delay');
+                    console.log('Home prediction card: Initiating connectWallet with 150ms delay');
                     setTimeout(async () => {
                       try {
-                        await tonConnectUI.openModal();
-                        console.log('Home prediction card: openModal triggered successfully after delay');
+                        await tonConnectUI.connectWallet();
+                        console.log('Home prediction card: connectWallet triggered successfully after delay');
                       } catch (e) {
-                        console.error('Home prediction card: Delayed openModal failed:', e);
+                        console.error('Home prediction card: Delayed connectWallet failed:', e);
                       }
                     }, 150);
                   }}

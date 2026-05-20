@@ -13,13 +13,13 @@ export default function Header() {
         console.log('Header: Initiating manual disconnect');
         await tonConnectUI.disconnect();
       } else {
-        console.log('Header: Initiating manual openModal with a 150ms delay');
+        console.log('Header: Initiating manual connectWallet with a 150ms delay');
         setTimeout(async () => {
           try {
-            await tonConnectUI.openModal();
-            console.log('Header: openModal triggered successfully after delay');
+            await tonConnectUI.connectWallet();
+            console.log('Header: connectWallet triggered successfully after delay');
           } catch (err) {
-            console.error('Header: Delayed openModal failed:', err);
+            console.error('Header: Delayed connectWallet failed:', err);
           }
         }, 150);
       }
