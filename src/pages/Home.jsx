@@ -92,9 +92,16 @@ function MatchCard({ match, user, tonConnectUI }) {
 
   // Polling blockchain for transaction validation
   const verifyTransactionOnChain = async (userRawAddress, expectedAmount, targetWallet) => {
-    const targetNetwork = import.meta.env.VITE_TON_NETWORK || '-3';
+    const targetNetwork = String(import.meta.env.VITE_TON_NETWORK || '0');
     const network = tonConnectUI.account?.network;
-    const tonApiBase = (targetNetwork === '-3' || network === -3) ? 'https://testnet.toncenter.com/api/v2' : 'https://toncenter.com/api/v2';
+    const isTestnet = 
+      targetNetwork === '0' || 
+      targetNetwork === '-3' || 
+      network === -3 || 
+      network === 0 || 
+      String(network) === '0' || 
+      String(network) === '-3';
+    const tonApiBase = isTestnet ? 'https://testnet.toncenter.com/api/v2' : 'https://toncenter.com/api/v2';
     let friendlyUserAddress = '';
     
     // Resolve raw hex user address to friendly format for TonCenter comparison
@@ -192,7 +199,7 @@ function MatchCard({ match, user, tonConnectUI }) {
 
       const transaction = {
         validUntil: Math.floor(Date.now() / 1000) + 120, // Valid for 2 mins
-        network: parseInt(import.meta.env.VITE_TON_NETWORK || '-3', 10), // -3 for Testnet, -239 for Mainnet
+        network: String(import.meta.env.VITE_TON_NETWORK || '0'), // "0" for Testnet, "-239" for Mainnet
         messages: [
           {
             address: walletAddress,
