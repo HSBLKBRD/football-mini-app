@@ -21,7 +21,7 @@ export default function LeaderboardPage() {
         .from('leaderboard')
         .select('*')
         .order('total_points', { ascending: false })
-        .limit(100);
+        .limit(500);
 
       if (error) throw error;
       setLeaders(data || []);

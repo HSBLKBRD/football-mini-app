@@ -29,7 +29,6 @@ export default function Admin() {
   }, []);
 
   const checkAdminAccess = () => {
-    // Read the admin ID from environment variables
     const configAdminId = import.meta.env.VITE_ADMIN_ID || import.meta.env.REACT_APP_ADMIN_ID || '';
     
     if (currentUser && configAdminId && currentUser.id.toString() === configAdminId.toString()) {
@@ -71,14 +70,32 @@ export default function Admin() {
     setSuccessMsg('');
 
     try {
-      const { error } = await supabase
+      const matchPayload = {
+        date: new Date(newDate).toISOString(),
+        status: 'scheduled'
+      };
+
+      // Try inserting with team_a and team_b first
+      let { error } = await supabase
         .from('matches')
         .insert({
+          ...matchPayload,
           team_a: newTeamA,
-          team_b: newTeamB,
-          date: new Date(newDate).toISOString(),
-          status: 'scheduled'
+          team_b: newTeamB
         });
+
+      // Fallback: If error indicates missing columns, try home_team and away_team
+      if (error && error.message && (error.message.includes('column') || error.code === '42703')) {
+        console.log('Inserting team_a/team_b failed. Retrying insertion with home_team/away_team...');
+        const retryResult = await supabase
+          .from('matches')
+          .insert({
+            ...matchPayload,
+            home_team: newTeamA,
+            away_team: newTeamB
+          });
+        error = retryResult.error;
+      }
 
       if (error) throw error;
       
@@ -138,7 +155,7 @@ export default function Admin() {
         throw new Error('Finished matches must have score results.');
       }
 
-      // 1. Update the match in Supabase
+      // Update the match in Supabase
       const { error: matchError } = await supabase
         .from('matches')
         .update({
@@ -150,9 +167,8 @@ export default function Admin() {
 
       if (matchError) throw matchError;
 
-      // 2. If the match is newly finished, calculate user scores and update the leaderboard
+      // If the match is newly finished, calculate user scores and update the leaderboard
       if (isFinished) {
-        // Fetch all predictions for this match
         const { data: predictions, error: predError } = await supabase
           .from('predictions')
           .select('*')
@@ -165,7 +181,6 @@ export default function Admin() {
             const pointsAwarded = calculatePoints(pred.pred_a, pred.pred_b, actualA, actualB);
 
             if (pointsAwarded > 0) {
-              // Fetch user's current points
               const { data: boardData, error: boardError } = await supabase
                 .from('leaderboard')
                 .select('total_points')
@@ -177,7 +192,6 @@ export default function Admin() {
               const currentPoints = boardData ? boardData.total_points : 0;
               const newPoints = currentPoints + pointsAwarded;
 
-              // Update user's points on leaderboard
               const { error: upsertError } = await supabase
                 .from('leaderboard')
                 .upsert({ 
@@ -229,6 +243,9 @@ export default function Admin() {
     );
   }
 
+  const selectedTeamAName = selectedMatch ? (selectedMatch.team_a || selectedMatch.home_team) : '';
+  const selectedTeamBName = selectedMatch ? (selectedMatch.team_b || selectedMatch.away_team) : '';
+
   return (
     <div className="admin-container">
       <h2 className="section-title">Admin Dashboard</h2>
@@ -244,14 +261,14 @@ export default function Admin() {
           </h3>
           <form onSubmit={handleUpdateMatch}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <span style={{ fontWeight: 600 }}>{selectedMatch.team_a}</span>
+              <span style={{ fontWeight: 600 }}>{selectedTeamAName}</span>
               <span style={{ color: 'var(--text-muted)' }}>vs</span>
-              <span style={{ fontWeight: 600 }}>{selectedMatch.team_b}</span>
+              <span style={{ fontWeight: 600 }}>{selectedTeamBName}</span>
             </div>
 
             <div className="prediction-inputs" style={{ margin: '10px 0' }}>
               <div className="score-input-wrapper">
-                <label className="prediction-label">{selectedMatch.team_a}</label>
+                <label className="prediction-label">{selectedTeamAName}</label>
                 <input
                   type="number"
                   min="0"
@@ -265,7 +282,7 @@ export default function Admin() {
               <div className="prediction-sep">:</div>
 
               <div className="score-input-wrapper">
-                <label className="prediction-label">{selectedMatch.team_b}</label>
+                <label className="prediction-label">{selectedTeamBName}</label>
                 <input
                   type="number"
                   min="0"
@@ -315,7 +332,7 @@ export default function Admin() {
         <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', marginBottom: '16px' }}>Create New Match</h3>
         <form onSubmit={handleCreateMatch}>
           <div className="form-group">
-            <label>Team A Name</label>
+            <label>Team A/Home Team Name</label>
             <input
               type="text"
               className="form-control"
@@ -328,7 +345,7 @@ export default function Admin() {
           </div>
 
           <div className="form-group">
-            <label>Team B Name</label>
+            <label>Team B/Away Team Name</label>
             <input
               type="text"
               className="form-control"
@@ -371,7 +388,7 @@ export default function Admin() {
             >
               <div className="user-info" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}>
                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                  {m.team_a} vs {m.team_b}
+                  {(m.team_a || m.home_team)} vs {(m.team_b || m.away_team)}
                 </span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                   {new Date(m.date).toLocaleString()}

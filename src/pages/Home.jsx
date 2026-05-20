@@ -3,9 +3,7 @@ import { useTonConnectUI } from '@tonconnect/ui-react';
 import { supabase } from '../lib/supabaseClient';
 import { getTelegramUser } from '../lib/telegramUtils';
 
-export default function Home() {
-  const [match, setMatch] = useState(null);
-  const [loading, setLoading] = useState(true);
+function MatchCard({ match, user, tonConnectUI }) {
   const [predA, setPredA] = useState('');
   const [predB, setPredB] = useState('');
   const [userPrediction, setUserPrediction] = useState(null);
@@ -15,19 +13,15 @@ export default function Home() {
   // Timer States
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: false });
 
-  const [tonConnectUI] = useTonConnectUI();
-  const user = getTelegramUser();
-
-  // Load the next active match and user's prediction
-  useEffect(() => {
-    fetchActiveMatch();
-  }, []);
+  // Support both team_a/team_b and home_team/away_team database naming conventions
+  const teamAName = match.team_a || match.home_team || 'Team A';
+  const teamBName = match.team_b || match.away_team || 'Team B';
 
   useEffect(() => {
     if (match && user) {
       fetchUserPrediction();
     }
-  }, [match]);
+  }, [match, user]);
 
   // Live countdown timer logic
   useEffect(() => {
@@ -62,28 +56,6 @@ export default function Home() {
 
     return () => clearInterval(timer);
   }, [match]);
-
-  const fetchActiveMatch = async () => {
-    try {
-      setLoading(true);
-      // Fetch the first scheduled match
-      const { data, error } = await supabase
-        .from('matches')
-        .select('*')
-        .eq('status', 'scheduled')
-        .order('date', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) throw error;
-      setMatch(data);
-    } catch (err) {
-      console.error('Error fetching match:', err);
-      setStatusMsg({ type: 'error', text: 'Supabase connection issue: Failed to load active matches.' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchUserPrediction = async () => {
     try {
@@ -284,6 +256,172 @@ export default function Home() {
     }
   };
 
+  return (
+    <div className="match-card" style={{ marginBottom: '20px' }}>
+      <div className="match-status">
+        <span className={countdown.isExpired ? "" : "status-dot"}></span>
+        {countdown.isExpired ? "Predictions Closed" : "Predictions Open"}
+      </div>
+
+      <div className="teams-grid">
+        <div className="team">
+          <div className="team-logo-placeholder">⚽</div>
+          <div className="team-name">{teamAName}</div>
+        </div>
+        
+        <div className="vs-divider">VS</div>
+        
+        <div className="team">
+          <div className="team-logo-placeholder">⚽</div>
+          <div className="team-name">{teamBName}</div>
+        </div>
+      </div>
+
+      {/* Countdown Clock Display */}
+      {!countdown.isExpired ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+            Match Kickoff In
+          </span>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+            <div style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '6px 10px', borderRadius: '6px', minWidth: '46px', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-gold)' }}>{String(countdown.days).padStart(2, '0')}</div>
+              <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Days</div>
+            </div>
+            <div style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '6px 10px', borderRadius: '6px', minWidth: '46px', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-gold)' }}>{String(countdown.hours).padStart(2, '0')}</div>
+              <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Hours</div>
+            </div>
+            <div style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '6px 10px', borderRadius: '6px', minWidth: '46px', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-gold)' }}>{String(countdown.minutes).padStart(2, '0')}</div>
+              <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Mins</div>
+            </div>
+            <div style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '6px 10px', borderRadius: '6px', minWidth: '46px', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-gold)' }}>{String(countdown.seconds).padStart(2, '0')}</div>
+              <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Secs</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ textAlign: 'center', color: '#ef4444', fontWeight: 600, fontSize: '0.85rem', marginBottom: '20px', letterSpacing: '0.5px' }}>
+          🔒 Kickoff reached. Form locked.
+        </div>
+      )}
+
+      <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+        Match Date: {new Date(match.date).toLocaleString()}
+      </div>
+
+      {userPrediction ? (
+        <div style={{ textAlign: 'center', background: 'rgba(16, 185, 129, 0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.15)' }}>
+          <p style={{ color: 'var(--accent-emerald)', fontWeight: 600, fontSize: '0.9rem', marginBottom: '8px' }}>
+            ✓ Prediction Submitted (Verified On-Chain)
+          </p>
+          <p style={{ fontSize: '1.25rem', fontWeight: 700 }}>
+            {teamAName} {userPrediction.pred_a} - {userPrediction.pred_b} {teamBName}
+          </p>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+            Your prediction has been logged. Leaderboard points will update once match finishes.
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={handlePredictionSubmit}>
+          <div className="prediction-inputs">
+            <div className="score-input-wrapper">
+              <label className="prediction-label">{teamAName}</label>
+              <input
+                type="number"
+                min="0"
+                className="score-input"
+                value={predA}
+                onChange={(e) => setPredA(e.target.value)}
+                disabled={submitting || countdown.isExpired}
+                required
+              />
+            </div>
+
+            <div className="prediction-sep">:</div>
+
+            <div className="score-input-wrapper">
+              <label className="prediction-label">{teamBName}</label>
+              <input
+                type="number"
+                min="0"
+                className="score-input"
+                value={predB}
+                onChange={(e) => setPredB(e.target.value)}
+                disabled={submitting || countdown.isExpired}
+                required
+              />
+            </div>
+          </div>
+
+          {statusMsg.text && (
+            <div className={`alert-${statusMsg.type}`} style={{ marginTop: '12px' }}>
+              {statusMsg.text}
+            </div>
+          )}
+
+          <div className="ton-connect-section">
+            {!tonConnectUI.connected ? (
+              <>
+                <p className="wallet-note">
+                  Please connect your wallet at the top of the screen to submit your prediction.
+                </p>
+                <button type="button" className="btn-primary" onClick={() => tonConnectUI.openModal()} disabled={submitting || countdown.isExpired}>
+                  Connect TON Wallet
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="wallet-note">
+                  Predictions require a small fee of 0.01 TON to prevent spam.
+                </p>
+                <button type="submit" className="btn-primary" disabled={submitting || countdown.isExpired}>
+                  {submitting ? 'Verifying payment...' : countdown.isExpired ? 'Predictions Closed' : 'Pay & Submit Prediction (0.01 TON)'}
+                </button>
+              </>
+            )}
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
+export default function Home() {
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
+  const [tonConnectUI] = useTonConnectUI();
+  const user = getTelegramUser();
+
+  // Load the next active matches
+  useEffect(() => {
+    fetchActiveMatches();
+  }, []);
+
+  const fetchActiveMatches = async () => {
+    try {
+      setLoading(true);
+      // Fetch up to 10 scheduled matches
+      const { data, error } = await supabase
+        .from('matches')
+        .select('*')
+        .eq('status', 'scheduled')
+        .order('date', { ascending: true })
+        .limit(10);
+
+      if (error) throw error;
+      setMatches(data || []);
+    } catch (err) {
+      console.error('Error fetching matches:', err);
+      setStatusMsg({ type: 'error', text: 'Supabase connection issue: Failed to load active matches.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
@@ -294,138 +432,23 @@ export default function Home() {
 
   return (
     <div className="match-container">
-      <h2 className="section-title">Active Match Prediction</h2>
+      <h2 className="section-title">Active Match Predictions</h2>
 
-      {match ? (
-        <div className="match-card">
-          <div className="match-status">
-            <span className={countdown.isExpired ? "" : "status-dot"}></span>
-            {countdown.isExpired ? "Predictions Closed" : "Predictions Open"}
-          </div>
-
-          <div className="teams-grid">
-            <div className="team">
-              <div className="team-logo-placeholder">⚽</div>
-              <div className="team-name">{match.team_a}</div>
-            </div>
-            
-            <div className="vs-divider">VS</div>
-            
-            <div className="team">
-              <div className="team-logo-placeholder">⚽</div>
-              <div className="team-name">{match.team_b}</div>
-            </div>
-          </div>
-
-          {/* Countdown Clock Display */}
-          {!countdown.isExpired ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-                Match Kickoff In
-              </span>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                <div style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '6px 10px', borderRadius: '6px', minWidth: '46px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-gold)' }}>{String(countdown.days).padStart(2, '0')}</div>
-                  <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Days</div>
-                </div>
-                <div style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '6px 10px', borderRadius: '6px', minWidth: '46px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-gold)' }}>{String(countdown.hours).padStart(2, '0')}</div>
-                  <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Hours</div>
-                </div>
-                <div style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '6px 10px', borderRadius: '6px', minWidth: '46px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-gold)' }}>{String(countdown.minutes).padStart(2, '0')}</div>
-                  <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Mins</div>
-                </div>
-                <div style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.03)', padding: '6px 10px', borderRadius: '6px', minWidth: '46px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-gold)' }}>{String(countdown.seconds).padStart(2, '0')}</div>
-                  <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Secs</div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', color: '#ef4444', fontWeight: 600, fontSize: '0.85rem', marginBottom: '20px', letterSpacing: '0.5px' }}>
-              🔒 Kickoff reached. Form locked.
-            </div>
-          )}
-
-          <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-            Match Date: {new Date(match.date).toLocaleString()}
-          </div>
-
-          {userPrediction ? (
-            <div style={{ textAlign: 'center', background: 'rgba(16, 185, 129, 0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.15)' }}>
-              <p style={{ color: 'var(--accent-emerald)', fontWeight: 600, fontSize: '0.9rem', marginBottom: '8px' }}>
-                ✓ Prediction Submitted (Verified On-Chain)
-              </p>
-              <p style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-                {match.team_a} {userPrediction.pred_a} - {userPrediction.pred_b} {match.team_b}
-              </p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-                Your prediction has been logged. Leaderboard points will update once match finishes.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handlePredictionSubmit}>
-              <div className="prediction-inputs">
-                <div className="score-input-wrapper">
-                  <label className="prediction-label">{match.team_a}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    className="score-input"
-                    value={predA}
-                    onChange={(e) => setPredA(e.target.value)}
-                    disabled={submitting || countdown.isExpired}
-                    required
-                  />
-                </div>
-
-                <div className="prediction-sep">:</div>
-
-                <div className="score-input-wrapper">
-                  <label className="prediction-label">{match.team_b}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    className="score-input"
-                    value={predB}
-                    onChange={(e) => setPredB(e.target.value)}
-                    disabled={submitting || countdown.isExpired}
-                    required
-                  />
-                </div>
-              </div>
-
-              {statusMsg.text && (
-                <div className={`alert-${statusMsg.type}`}>
-                  {statusMsg.text}
-                </div>
-              )}
-
-              <div className="ton-connect-section">
-                {!tonConnectUI.connected ? (
-                  <>
-                    <p className="wallet-note">
-                      Please connect your wallet at the top of the screen to submit your prediction.
-                    </p>
-                    <button type="button" className="btn-primary" onClick={() => tonConnectUI.openModal()} disabled={submitting || countdown.isExpired}>
-                      Connect TON Wallet
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <p className="wallet-note">
-                      Predictions require a small fee of 0.01 TON to prevent spam.
-                    </p>
-                    <button type="submit" className="btn-primary" disabled={submitting || countdown.isExpired}>
-                      {submitting ? 'Verifying payment...' : countdown.isExpired ? 'Predictions Closed' : 'Pay & Submit Prediction (0.01 TON)'}
-                    </button>
-                  </>
-                )}
-              </div>
-            </form>
-          )}
+      {statusMsg.text && (
+        <div className={`alert-${statusMsg.type}`} style={{ marginBottom: '20px' }}>
+          {statusMsg.text}
         </div>
+      )}
+
+      {matches.length > 0 ? (
+        matches.map((match) => (
+          <MatchCard 
+            key={match.id} 
+            match={match} 
+            user={user} 
+            tonConnectUI={tonConnectUI} 
+          />
+        ))
       ) : (
         <div style={{ textAlign: 'center', padding: '40px', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
           <p style={{ color: 'var(--text-muted)' }}>No active matches are currently open for prediction.</p>
