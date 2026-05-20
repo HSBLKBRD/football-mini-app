@@ -17,6 +17,7 @@ function AppContent() {
   const [showManual, setShowManual] = useState(false);
   const [manualAddress, setManualAddress] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
 
   const SUPABASE_URL = 'https://kfgmorqatvpnecjbixak.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_6suJaEKh-tUo5UTmL7qFVw_wgdFAOh7';
@@ -36,7 +37,7 @@ function AppContent() {
           'Content-Type': 'application/json',
           Prefer: 'return=representation',
         },
-        body: JSON.stringify({ wallet_address: manualAddress.trim(), created_at: new Date().toISOString() }),
+        body: JSON.stringify({ address: manualAddress.trim(), created_at: new Date().toISOString() }),
       });
       if (!resp.ok) {
         const err = await resp.text();
@@ -45,30 +46,41 @@ function AppContent() {
         console.log('✅ Address saved');
         setManualAddress('');
         setShowManual(false);
+        // Mark connection as established after manual save
         setIsConnected(true);
-      }
+        // Manual flow does not provide a wallet address; keep it empty or set to entered address
+        setWalletAddress(manualAddress.trim());      }
     } catch (e) {
       console.error('❌ Unexpected error while saving address', e);
     }
   };
 
   const handleConnect = async () => {
-    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
-    if (isMobile) {
-      setShowManual(true);
-      return;
-    }
+    // Desktop SDK flow
     if (!tonConnectUI) {
+      // SDK unavailable – fallback to manual UI
       setShowManual(true);
       return;
     }
     try {
       await tonConnectUI.connectWallet();
+      // After successful connection, retrieve the wallet address
+      const address = tonConnectUI?.wallet?.account?.address || '';
+      setWalletAddress(address);
       setIsConnected(true);
     } catch (e) {
       console.warn('TonConnect connection failed, falling back to manual', e);
       setShowManual(true);
     }
+  };
+
+  // Disconnect handler for desktop
+  const handleDisconnect = () => {
+    if (tonConnectUI?.disconnect) {
+      tonConnectUI.disconnect();
+    }
+    setIsConnected(false);
+    setWalletAddress('');
   };
 
   return (
@@ -89,7 +101,14 @@ function AppContent() {
       </nav>
 
       {/* Connect options */}
-      <button onClick={handleConnect} className="connect-btn">{isConnected ? 'Wallet Connected' : 'Connect Wallet'}</button>
+      {isConnected ? (
+        <>
+          <span className="wallet-info">Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
+          <button onClick={handleDisconnect} className="disconnect-btn" style={{ marginLeft: '0.5rem' }}>Disconnect</button>
+        </>
+      ) : (
+        <button onClick={handleConnect} className="connect-btn">Connect Wallet</button>
+      )}
       <button onClick={() => setShowManual(true)} className="manual-btn" style={{ marginLeft: '0.5rem' }}>
         Manual Connect
       </button>
